@@ -1,8 +1,5 @@
 /**
  * Функция для расчета выручки
- * @param purchase запись о покупке
- * @param product карточка товара
- * @returns {number}
  */
 function calculateSimpleRevenue(purchase, product) {
     const {sale_price, quantity, discount} = purchase;
@@ -12,10 +9,6 @@ function calculateSimpleRevenue(purchase, product) {
 
 /**
  * Функция для расчета бонусов
- * @param index порядковый номер в отсортированном массиве
- * @param total общее число продавцов
- * @param seller карточка продавца
- * @returns {number}
  */
 function calculateBonusByProfit(index, total, seller) {
     const {profit} = seller;
@@ -26,6 +19,9 @@ function calculateBonusByProfit(index, total, seller) {
     return profit * 0.05;
 }
 
+/**
+ * Функция для расчета прибыли
+ */
 function calculateSimpleProfit(purchase, _product) {
     const {discount, sale_price, quantity = 0} = purchase;
     return (
@@ -35,10 +31,7 @@ function calculateSimpleProfit(purchase, _product) {
 }
 
 /**
- * Функция для анализа данных продаж
- * @param data
- * @param options
- * @returns {{revenue, top_products, bonus, name, sales_count, profit, seller_id}[]}
+ * Главная функция анализа
  */
 function analyzeSalesData(data, options) {
 
@@ -60,7 +53,11 @@ function analyzeSalesData(data, options) {
         throw new Error("Некорректные опции");
     }
 
-    const {calculateSimpleRevenue, calculateBonusByProfit, calculateSimpleProfit} = options;
+    const {
+        calculateSimpleRevenue,
+        calculateBonusByProfit,
+        calculateSimpleProfit
+    } = options;
 
     const itemIndex = Object.fromEntries(
         data.products.map(item => [item.sku, item])
@@ -114,12 +111,3 @@ function analyzeSalesData(data, options) {
         bonus: +seller.bonus.toFixed(2),
     }));
 }
-
-const report = analyzeSalesData(data, {
-    calculateSimpleRevenue,
-    calculateBonusByProfit,
-    calculateSimpleProfit,
-    analyzeSalesData
-});
-
-console.table(report);
