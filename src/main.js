@@ -48,6 +48,16 @@ function calculateSimpleProfit(purchase, _product) {
  * @returns {{revenue, top_products, bonus, name, sales_count, profit, seller_id}[]}
  */
 function analyzeSalesData(data, options) {
+
+    if (
+        !data
+        || !Array.isArray(data.sellers)
+        || !Array.isArray(data.products)
+        || !Array.isArray(data.purchase_records)
+    ) {
+        throw new Error("Некорректные входные данные");
+    }
+
     const {calculateSimpleRevenue, calculateBonusByProfit} = options;
 
     const itemIndex = Object.fromEntries(
