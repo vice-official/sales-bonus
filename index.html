@@ -8,20 +8,20 @@
     <title>Анализ продаж магазина</title>
 </head>
 <body>
-    <h1>Анализ продаж магазина</h1>
+<h1>Анализ продаж магазина</h1>
 
-    <script src="data/dataset_1.js"></script>
-    <script src="src/main.js"></script>
-    <script>
-        console.log(data);
+<script src="data/dataset_1.js"></script>
+<script src="src/main.js"></script>
+<script>
+    console.log(data);
 
-        const report = analyzeSalesData(data, {
-            calculateRevenue: calculateSimpleRevenue,
-            calculateBonus: calculateBonusByProfit
-        });
+    const report = analyzeSalesData(data, {
+        calculateRevenue: calculateSimpleRevenue,
+        calculateBonus: calculateBonusByProfit
+    });
 
-        if (console.table) console.table(report);
-        else console.log(report);
-    </script>
+    if (console.table) console.table(report);
+    else console.log(report);
+</script>
 </body>
 </html>

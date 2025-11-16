@@ -1,9 +1,22 @@
+/**
+ * Функция для расчета выручки
+ * @param purchase запись о покупке
+ * @param product карточка товара
+ * @returns {number}
+ */
 function calculateSimpleRevenue(purchase, product) {
     const {sale_price, quantity, discount} = purchase;
     const discountMultiplier = 1 - discount / 100;
     return sale_price * quantity * discountMultiplier;
 }
 
+/**
+ * Функция для расчета бонусов
+ * @param index порядковый номер в отсортированном массиве
+ * @param total общее число продавцов
+ * @param seller карточка продавца
+ * @returns {number}
+ */
 function calculateBonusByProfit(index, total, seller) {
     const {profit} = seller;
 
@@ -21,6 +34,12 @@ function calculateSimpleProfit(purchase, _product) {
     );
 }
 
+/**
+ * Функция для анализа данных продаж
+ * @param data
+ * @param options
+ * @returns {{revenue, top_products, bonus, name, sales_count, profit, seller_id}[]}
+ */
 function analyzeSalesData(data, options) {
 
     if (
@@ -96,9 +115,11 @@ function analyzeSalesData(data, options) {
     }));
 }
 
-module.exports = {
+const report = analyzeSalesData(data, {
     calculateSimpleRevenue,
     calculateBonusByProfit,
     calculateSimpleProfit,
-    analyzeSalesData,
-};
+    analyzeSalesData
+});
+
+console.table(report);
