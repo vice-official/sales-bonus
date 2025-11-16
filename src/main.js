@@ -121,10 +121,3 @@ function analyzeSalesData(data, options) {
         bonus: +seller.bonus.toFixed(2),
     }));
 }
-
-module.exports = {
-    calculateSimpleRevenue,
-    calculateBonusByProfit,
-    calculateSimpleProfit,
-    analyzeSalesData,
-};
