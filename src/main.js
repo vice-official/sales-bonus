@@ -1,15 +1,10 @@
-/**
- * Функция для расчета выручки
- */
-function calculateSimpleRevenue(purchase, product) {
-    const {sale_price, quantity, discount} = purchase;
+function calculateSimpleRevenue(purchase, _product) {
+    const { sale_price, quantity, discount } = purchase;
     const discountMultiplier = 1 - discount / 100;
-    return sale_price * quantity * discountMultiplier;
+    const revenue = sale_price * quantity * discountMultiplier;
+    return +revenue.toFixed(2);
 }
 
-/**
- * Функция для расчета бонусов
- */
 function calculateBonusByProfit(index, total, seller) {
     const {profit} = seller;
 
@@ -19,9 +14,6 @@ function calculateBonusByProfit(index, total, seller) {
     return profit * 0.05;
 }
 
-/**
- * Функция для расчета прибыли
- */
 function calculateSimpleProfit(purchase, _product) {
     const {discount, sale_price, quantity = 0} = purchase;
     return (
@@ -30,9 +22,6 @@ function calculateSimpleProfit(purchase, _product) {
     );
 }
 
-/**
- * Главная функция анализа
- */
 function analyzeSalesData(data, options) {
 
     if (
