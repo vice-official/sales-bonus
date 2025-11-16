@@ -122,10 +122,9 @@ function analyzeSalesData(data, options) {
     }));
 }
 
-const report = analyzeSalesData(data, {
+module.exports = {
     calculateSimpleRevenue,
     calculateBonusByProfit,
-    calculateSimpleProfit
-});
-
-console.table(report);
+    calculateSimpleProfit,
+    analyzeSalesData,
+};
