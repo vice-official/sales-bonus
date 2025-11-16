@@ -58,7 +58,7 @@ function analyzeSalesData(data, options) {
         throw new Error("Некорректные входные данные");
     }
 
-    const {calculateSimpleRevenue, calculateBonusByProfit} = options;
+    const {calculateSimpleRevenue, calculateBonusByProfit, calculateSimpleProfit} = options;
 
     const itemIndex = Object.fromEntries(
         data.products.map(item => [item.sku, item])
@@ -124,7 +124,8 @@ function analyzeSalesData(data, options) {
 
 const report = analyzeSalesData(data, {
     calculateSimpleRevenue,
-    calculateBonusByProfit
+    calculateBonusByProfit,
+    calculateSimpleProfit
 });
 
 console.table(report);
