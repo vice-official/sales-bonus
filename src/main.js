@@ -6,7 +6,7 @@ function calculateSimpleRevenue(purchase, _product) {
 }
 
 function calculateBonusByProfit(index, total, seller) {
-    const {profit} = seller;
+    const { profit } = seller;
 
     if (index === 0) return profit * 0.15;
     if (index === 1 || index === 2) return profit * 0.1;
@@ -15,15 +15,19 @@ function calculateBonusByProfit(index, total, seller) {
 }
 
 function calculateSimpleProfit(purchase, _product) {
-    const {discount, sale_price, quantity = 0} = purchase;
+    const { discount, sale_price, quantity = 0 } = purchase;
     return (
         sale_price * (1 - discount / 100) * quantity -
         _product.purchase_price * quantity
     );
 }
 
-function analyzeSalesData(data, options) {
-
+function analyzeSalesData(
+    data,
+    optionsOrCalcRevenue,
+    calcBonusArg,
+    calcProfitArg
+) {
     if (
         !data ||
         !Array.isArray(data.sellers) ||
@@ -33,20 +37,31 @@ function analyzeSalesData(data, options) {
         throw new Error("Некорректные входные данные");
     }
 
+    let calcRevenueFn;
+    let calcBonusFn;
+    let calcProfitFn;
+
     if (
-        !options ||
-        typeof options.calculateSimpleRevenue !== "function" ||
-        typeof options.calculateBonusByProfit !== "function" ||
-        typeof options.calculateSimpleProfit !== "function"
+        optionsOrCalcRevenue &&
+        typeof optionsOrCalcRevenue === "object" &&
+        !Array.isArray(optionsOrCalcRevenue)
+    ) {
+        calcRevenueFn = optionsOrCalcRevenue.calculateSimpleRevenue;
+        calcBonusFn = optionsOrCalcRevenue.calculateBonusByProfit;
+        calcProfitFn = optionsOrCalcRevenue.calculateSimpleProfit;
+    } else {
+        calcRevenueFn = optionsOrCalcRevenue;
+        calcBonusFn = calcBonusArg;
+        calcProfitFn = calcProfitArg;
+    }
+
+    if (
+        typeof calcRevenueFn !== "function" ||
+        typeof calcBonusFn !== "function" ||
+        typeof calcProfitFn !== "function"
     ) {
         throw new Error("Некорректные опции");
     }
-
-    const {
-        calculateSimpleRevenue,
-        calculateBonusByProfit,
-        calculateSimpleProfit
-    } = options;
 
     const itemIndex = Object.fromEntries(
         data.products.map(item => [item.sku, item])
@@ -61,33 +76,41 @@ function analyzeSalesData(data, options) {
                 revenue: 0,
                 profit: 0,
                 sales_count: 0,
-                products_sold: {},
-            },
+                products_sold: {}
+            }
         ])
     );
 
-    for (let rec of data.purchase_records) {
+    for (const rec of data.purchase_records) {
         const stat = sellerStat[rec.seller_id];
+        if (!stat) continue;
+
         stat.sales_count++;
 
-        for (let item of rec.items) {
+        for (const item of rec.items) {
             const product = itemIndex[item.sku];
-            stat.products_sold[item.sku] = (stat.products_sold[item.sku] ?? 0) + item.quantity;
+            if (!product) continue;
 
-            stat.revenue += calculateSimpleRevenue(item, product);
-            stat.profit += calculateSimpleProfit(item, product);
+            stat.products_sold[item.sku] =
+                (stat.products_sold[item.sku] ?? 0) + item.quantity;
+
+            stat.revenue += calcRevenueFn(item, product);
+            stat.profit += calcProfitFn(item, product);
         }
     }
 
-    const sellerStatSorted = Object.values(sellerStat).sort((a, b) => b.profit - a.profit);
+
+    const sellerStatSorted = Object.values(sellerStat).sort(
+        (a, b) => b.profit - a.profit
+    );
 
     sellerStatSorted.forEach((seller, index) => {
-        seller.bonus = calculateBonusByProfit(index, sellerStatSorted.length, seller);
+        seller.bonus = calcBonusFn(index, sellerStatSorted.length, seller);
 
         seller.top_products = Object.entries(seller.products_sold)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 10)
-            .map(([sku, quantity]) => ({sku, quantity}));
+            .map(([sku, quantity]) => ({ sku, quantity }));
     });
 
     return sellerStatSorted.map(seller => ({
@@ -97,6 +120,15 @@ function analyzeSalesData(data, options) {
         profit: +seller.profit.toFixed(2),
         sales_count: seller.sales_count,
         top_products: seller.top_products,
-        bonus: +seller.bonus.toFixed(2),
+        bonus: +seller.bonus.toFixed(2)
     }));
+}
+
+if (typeof module !== "undefined") {
+    module.exports = {
+        calculateSimpleRevenue,
+        calculateBonusByProfit,
+        calculateSimpleProfit,
+        analyzeSalesData
+    };
 }
