@@ -14,21 +14,15 @@ function calculateBonusByProfit(index, total, seller) {
     return profit * 0.05;
 }
 
-function calculateSimpleProfit(purchase, _product) {
+function calculateSimpleProfit(purchase, product) {
     const { discount, sale_price, quantity = 0 } = purchase;
     return (
         sale_price * (1 - discount / 100) * quantity -
-        _product.purchase_price * quantity
+        product.purchase_price * quantity
     );
 }
 
-function analyzeSalesData(
-    data,
-    optionsOrCalcRevenue,
-    calcBonusArg,
-    calcProfitArg
-) {
-    // 1. Проверяем сами данные
+function analyzeSalesData(data, options) {
     if (
         !data ||
         !Array.isArray(data.sellers) ||
@@ -38,54 +32,20 @@ function analyzeSalesData(
         throw new Error("Некорректные входные данные");
     }
 
-    // 2. Разбираем, как нам передали функции
-    let calcRevenueFn;
-    let calcBonusFn;
-    let calcProfitFn;
-
-    // Вариант: три позиционных аргумента
-    if (typeof optionsOrCalcRevenue === "function") {
-        calcRevenueFn = optionsOrCalcRevenue;
-        if (typeof calcBonusArg === "function") {
-            calcBonusFn = calcBonusArg;
-        }
-        if (typeof calcProfitArg === "function") {
-            calcProfitFn = calcProfitArg;
-        }
-    }
-    // Вариант: объект опций
-    else if (
-        optionsOrCalcRevenue &&
-        typeof optionsOrCalcRevenue === "object" &&
-        !Array.isArray(optionsOrCalcRevenue)
+    if (
+        !options ||
+        typeof options.calculateSimpleRevenue !== "function" ||
+        typeof options.calculateBonusByProfit !== "function"
     ) {
-        if (typeof optionsOrCalcRevenue.calculateSimpleRevenue === "function") {
-            calcRevenueFn = optionsOrCalcRevenue.calculateSimpleRevenue;
-        }
-        if (typeof optionsOrCalcRevenue.calculateBonusByProfit === "function") {
-            calcBonusFn = optionsOrCalcRevenue.calculateBonusByProfit;
-        }
-        if (typeof optionsOrCalcRevenue.calculateSimpleProfit === "function") {
-            calcProfitFn = optionsOrCalcRevenue.calculateSimpleProfit;
-        }
-    }
-
-    // 3. Минимальный набор — должны быть функции выручки и бонуса.
-    if (typeof calcRevenueFn !== "function" || typeof calcBonusFn !== "function") {
         throw new Error("Некорректные опции");
     }
 
-    // 4. Функция прибыли — опциональна, если нет — берём нашу
-    if (typeof calcProfitFn !== "function") {
-        calcProfitFn = calculateSimpleProfit;
-    }
+    const { calculateSimpleRevenue, calculateBonusByProfit } = options;
 
-    // 5. Индекс товаров по sku
     const itemIndex = Object.fromEntries(
         data.products.map(item => [item.sku, item])
     );
 
-    // 6. Заготовка статистики по продавцам
     const sellerStat = Object.fromEntries(
         data.sellers.map(seller => [
             seller.id,
@@ -100,7 +60,6 @@ function analyzeSalesData(
         ])
     );
 
-    // 7. Обход всех записей о покупках
     for (const rec of data.purchase_records) {
         const stat = sellerStat[rec.seller_id];
         if (!stat) continue;
@@ -114,19 +73,17 @@ function analyzeSalesData(
             stat.products_sold[item.sku] =
                 (stat.products_sold[item.sku] ?? 0) + item.quantity;
 
-            stat.revenue += calcRevenueFn(item, product);
-            stat.profit += calcProfitFn(item, product);
+            stat.revenue += calculateSimpleRevenue(item, product);
+            stat.profit += calculateSimpleProfit(item, product);
         }
     }
 
-    // 8. Сортировка по прибыли
     const sellerStatSorted = Object.values(sellerStat).sort(
         (a, b) => b.profit - a.profit
     );
 
-    // 9. Бонусы и топ-товары
-    sellerStatSorted.forEach((seller, index) => {
-        seller.bonus = calcBonusFn(index, sellerStatSorted.length, seller);
+    sellerStatSorted.forEach((seller, index, arr) => {
+        seller.bonus = calculateBonusByProfit(index, arr.length, seller);
 
         seller.top_products = Object.entries(seller.products_sold)
             .sort((a, b) => b[1] - a[1])
@@ -134,7 +91,6 @@ function analyzeSalesData(
             .map(([sku, quantity]) => ({ sku, quantity }));
     });
 
-    // 10. Финальный отчёт с округлением
     return sellerStatSorted.map(seller => ({
         seller_id: seller.id,
         name: seller.name,
@@ -144,13 +100,4 @@ function analyzeSalesData(
         top_products: seller.top_products,
         bonus: +seller.bonus.toFixed(2)
     }));
-}
-
-if (typeof module !== "undefined") {
-    module.exports = {
-        calculateSimpleRevenue,
-        calculateBonusByProfit,
-        calculateSimpleProfit,
-        analyzeSalesData
-    };
 }
