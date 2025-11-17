@@ -1,4 +1,4 @@
-function calculateSimpleRevenue(purchase, _product) {
+function calculateSimpleRevenue(purchase, product) {
     const { sale_price, quantity, discount } = purchase;
     const discountMultiplier = 1 - discount / 100;
     const revenue = sale_price * quantity * discountMultiplier;
@@ -16,6 +16,7 @@ function calculateBonusByProfit(index, total, seller) {
 
 function calculateSimpleProfit(purchase, product) {
     const { discount, sale_price, quantity = 0 } = purchase;
+
     return (
         sale_price * (1 - discount / 100) * quantity -
         product.purchase_price * quantity
@@ -34,13 +35,13 @@ function analyzeSalesData(data, options) {
 
     if (
         !options ||
-        typeof options.calculateSimpleRevenue !== "function" ||
-        typeof options.calculateBonusByProfit !== "function"
+        typeof options.calculateRevenue !== "function" ||
+        typeof options.calculateBonus !== "function"
     ) {
         throw new Error("Некорректные опции");
     }
 
-    const { calculateSimpleRevenue, calculateBonusByProfit } = options;
+    const { calculateRevenue, calculateBonus } = options;
 
     const itemIndex = Object.fromEntries(
         data.products.map(item => [item.sku, item])
@@ -73,7 +74,7 @@ function analyzeSalesData(data, options) {
             stat.products_sold[item.sku] =
                 (stat.products_sold[item.sku] ?? 0) + item.quantity;
 
-            stat.revenue += calculateSimpleRevenue(item, product);
+            stat.revenue += calculateRevenue(item, product);
             stat.profit += calculateSimpleProfit(item, product);
         }
     }
@@ -83,7 +84,7 @@ function analyzeSalesData(data, options) {
     );
 
     sellerStatSorted.forEach((seller, index, arr) => {
-        seller.bonus = calculateBonusByProfit(index, arr.length, seller);
+        seller.bonus = calculateBonus(index, arr.length, seller);
 
         seller.top_products = Object.entries(seller.products_sold)
             .sort((a, b) => b[1] - a[1])
