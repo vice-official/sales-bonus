@@ -1,4 +1,4 @@
-function calculateSimpleRevenue(purchase, _product) {
+function calculateSimpleRevenue(purchase, product) {
     const { sale_price, quantity, discount } = purchase;
     const discountMultiplier = 1 - discount / 100;
     const revenue = sale_price * quantity * discountMultiplier;
@@ -16,6 +16,7 @@ function calculateBonusByProfit(index, total, seller) {
 
 function calculateSimpleProfit(purchase, product) {
     const { discount, sale_price, quantity = 0 } = purchase;
+
     return (
         sale_price * (1 - discount / 100) * quantity -
         product.purchase_price * quantity
@@ -25,9 +26,9 @@ function calculateSimpleProfit(purchase, product) {
 function analyzeSalesData(data, options) {
     if (
         !data ||
-        !Array.isArray(data.sellers) ||
-        !Array.isArray(data.products) ||
-        !Array.isArray(data.purchase_records)
+        !Array.isArray(data.sellers) || data.sellers.length === 0 ||
+        !Array.isArray(data.products) || data.products.length === 0 ||
+        !Array.isArray(data.purchase_records) || data.purchase_records.length === 0
     ) {
         throw new Error("Некорректные входные данные");
     }
